@@ -346,7 +346,8 @@ param(
 	[string]$Provider="System.Data.SqlClient"
 )
 
-	Process	{
+	Process	
+	{
 		return Create-Parameter -Name $Name -DbType $DbType -Value $Value -Direction "Input" -Provider $Provider
 	}#Process
 } # Create-InParameter
@@ -420,7 +421,8 @@ param(
 	[string]$Provider = "System.Data.SqlClient"
 )
 
-	Process {
+	Process 
+	{
 		return Create-Parameter -Name $Name -DbType $DbType -Size $Size -Direction "Output" -Provider $Provider
 	}#Process
 } # Create-OutParameter
@@ -474,7 +476,8 @@ param(
 	[string]$Provider = "System.Data.SqlClient"
 )
 
-	Process {
+	Process 
+	{
 		return Create-Parameter -Name $Name -DbType "Int32" -Size 4 -Direction "ReturnValue" -Provider $Provider
 	}#Process
 
@@ -554,14 +557,16 @@ param(
 	[string]$Provider = "System.Data.SqlClient"
 )
 
-	Process {
+	Process 
+	{
 		$ProviderFactory = [System.Data.Common.DBProviderFactories]::GetFactory($Provider)
 		$p = $ProviderFactory.CreateParameter()
 		$p.ParameterName = $Name
 		$p.Direction = $Direction
 		$p.DbType = $DbType
 
-		switch($direction) {
+		switch($direction) 
+		{
 			"Input" {$p.Value = $Value; break}
 			"Output" {$p.Size = $Size; break}				
 		}
