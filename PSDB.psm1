@@ -1,24 +1,31 @@
-﻿# psdb v0.01
-# Copyright © 2009 Jorge Matos
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+﻿<# 
+psdb v0.02
+Copyright © 2009 Jorge Matos
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-function Invoke-DB 
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+#>
+
+[string]$PSDB_DefaultConnectionString = "data source=.\sqlexpress;initial catalog=Northwind; Integrated Security=SSPI"
+[int]$PSDB_DefaultCommandTimeout = 600
+
+Export-ModuleMember -Variable PSDB_DefaultCommandTimeout, PSDB_DefaultConnectionString
+
+function Invoke-DBCommand 
 {
 <#
 .Synopsis
@@ -39,7 +46,7 @@ function Invoke-DB
 	"Query is the default
 .Parameter Parameters 
 	An array of DbParameter objects.  
-	You can create a DbParameter object using either: Create-InParameter, Create-OutParameter, Create-ReturnParameter or Create-Parameter
+	You can create a DbParameter object using either: New-DBInputParameter, New-DBOutputParameter, New-DBReturnParameter or New-DBParameter
 .Parameter Connectionstring
 	The connectionString you want to use.
 	Default="data source=.;initial catalog=Northwind; Integrated Security=SSPI"
@@ -56,53 +63,53 @@ function Invoke-DB
 .Parameter CommandTimeout
 	The number of seconds to allow a command to run. Default = 600
 .Example	
-$rows = Invoke-DB -Sql "SELECT TOP 10 * FROM Orders"
+$rows = Invoke-DBCommand -Sql "SELECT TOP 10 * FROM Orders"
 
 Return an array of DataRow objects using default values:
-		ConnectionString = "data source=.;initial catalog=Northwind; Integrated Security=SSPI"
+		ConnectionString = "data source=.\sqlexpress;initial catalog=Northwind; Integrated Security=SSPI"
 	    ExecuteType = "Query"
 		Parameters = @()
 		Provider = System.Data.SqlClient
 		CommandTimeout = 600
 .Example 
 $sql = "SELECT TOP 10 * FROM Orders"
-$rows = Invoke-DB -Sql $sql -Connectionstring "data source=.;initial catalog=Northwind; uid=test; pwd=test"
+$rows = Invoke-DBCommand -Sql $sql -Connectionstring "data source=.;initial catalog=Northwind; uid=test; pwd=test"
 
 Return an array of DataRow objects with connectionstring 	
 .Example
 $sql = "UPDATE Orders SET EmployeeID = 6 WHERE OrderID = 10248"
-$rowsAffected = Invoke-DB -Sql $sql -ExecuteType "NonQuery"   
+$rowsAffected = Invoke-DBCommand -Sql $sql -ExecuteType "NonQuery"   
 
 Performs an update 
 "NonQuery" is used to return the number of rows affected
 .Example
 $Parameters = @(
-				(Create-InParameter -Name "@Country" -Value "USA"),
-           		(Create-InParameter -Name "@Freight" -Value 100)
+				(New-DBInputParameter -Name "@Country" -Value "USA"),
+           		(New-DBInputParameter -Name "@Freight" -Value 100)
 			    ) 
 $sql = "SELECT * FROM Orders WHERE  (ShipCountry = @Country) AND (Freight > @Freight)" 
-$rows = Invoke-DB -Sql $sql -Parameters $Parameters 	
+$rows = Invoke-DBCommand -Sql $sql -Parameters $Parameters 	
 
 Using Parameters
 .Example
-$rows = Invoke-DB -SPROC "Ten Most Expensive Products"
+$rows = Invoke-DBCommand -SPROC "Ten Most Expensive Products"
 
 Calling a stored procedure 
 .Example
-$rows = Invoke-DB -SPROC "Ten Most Expensive Products" -Connectionstring "data source=.;initial catalog=Northwind; uid=test; pwd=test"
+$rows = Invoke-DBCommand -SPROC "Ten Most Expensive Products" -Connectionstring "data source=.;initial catalog=Northwind; uid=test; pwd=test"
 
 Calling a stored procedure with connectionstring
 .Example
-$Parameters = @( Create-InParameter -Name "@CustomerID" -Value "ALFKI" ) 
-$rows = Invoke-DB -SPROC "CustOrderHist" -Parameters $Parameters
+$Parameters = @( New-DBInputParameter -Name "@CustomerID" -Value "ALFKI" ) 
+$rows = Invoke-DBCommand -SPROC "CustOrderHist" -Parameters $Parameters
 
 Calling a stored procedure with a parameter
 .Example
-$result = Invoke-DB -Sql "SELECT COUNT(*) FROM Orders" -ExecuteType "Scalar"
+$result = Invoke-DBCommand -Sql "SELECT COUNT(*) FROM Orders" -ExecuteType "Scalar"
 
 Returning a scalar value
 .Example
-$reader = Invoke-DB -Sql "SELECT TOP 2 * FROM Orders" -ExecuteType "Reader"
+$reader = Invoke-DBCommand -Sql "SELECT TOP 2 * FROM Orders" -ExecuteType "Reader"
 if ($reader.HasRows) {
 	while($reader.Read()) {
 		"{0} {1}" -f $reader[0],$reader[1]
@@ -113,7 +120,7 @@ $reader.Close()
 
 Return an IDataReader and access column values via index 
 .Example
-$reader = Invoke-DB -Sql "SELECT TOP 2 * FROM Orders" -ExecuteType "Reader"
+$reader = Invoke-DBCommand -Sql "SELECT TOP 2 * FROM Orders" -ExecuteType "Reader"
 if ($reader.HasRows) {
      $columns = $reader.GetSchemaTable() | % { $_.ColumnName }
      while($reader.Read()) {
@@ -128,7 +135,7 @@ $accessfile = Resolve-Path .\Database1.mdb
 $provider = "System.Data.OleDb"
 $connectionString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$accessfile"
 $sql = "SELECT * FROM users"
-$rows = invoke-db -Sql $sql -Connectionstring $connectionString -Provider $provider
+$rows = Invoke-DBCommand -Sql $sql -Connectionstring $connectionString -Provider $provider
 
 Query an Access Database
 .Example
@@ -136,7 +143,7 @@ $excelfile = Resolve-Path .\book1.xls
 $provider = "System.Data.OleDb"
 $connectionString = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=$excelfile;Extended Properties=Excel 8.0"
 $sql = "SELECT * FROM [Sheet1$]"
-$rows = invoke-db -Sql $sql -Connectionstring $connectionString -Provider $provider
+$rows = Invoke-DBCommand -Sql $sql -Connectionstring $connectionString -Provider $provider
 
 Query an Excel file
 .ReturnValue
@@ -147,14 +154,14 @@ Query an Excel file
 	Scalar   -> Scalar Value (String, Int, DateTime, etc...)
 	Reader   -> IDataReader (uses CommandBehavior.CloseConnection)	
 .Link
-    Create-Parameter
-	Create-InParameter
-	Create-OutParameter
-	Create-ReturnParameter
+    New-DBParameter
+	New-DBInputParameter
+	New-DBOutputParameter
+	New-DBReturnParameter
 .Notes
- NAME:      Invoke-DB
+ NAME:      Invoke-DBCommand
  AUTHOR:    Jorge Matos
- LASTEDIT:  05/13/2009 
+ LASTEDIT:  09/14/2009 
 #Requires -Version 2.0
 #>
 
@@ -182,14 +189,14 @@ param(
 
 	[Parameter(Position=3)]
 	[Alias("cs")]
-	[string]$Connectionstring="data source=.;initial catalog=Northwind; Integrated Security=SSPI",
+	[string]$Connectionstring=$PSDB_DefaultConnectionString,
 
 	[Parameter(Position=4)]
 	[string]$Provider="System.Data.SqlClient",
 
 	[Parameter(Position=5)]
 	[Alias("ct")]
-	[int]$CommandTimeout=600
+	[int]$CommandTimeout=$PSDB_DefaultCommandTimeout
 ) #param
 
 	Process 
@@ -211,7 +218,7 @@ param(
 		
 		$providerFactory = [System.Data.Common.DBProviderFactories]::GetFactory($Provider) 
 		$connection = $providerFactory.CreateConnection()
-		$connection.ConnectionString = $connectionString
+		$connection.ConnectionString = $Connectionstring
 		
 		$command = $providerFactory.CreateCommand()
 		
@@ -225,7 +232,7 @@ param(
 			$command.CommandType = "StoredProcedure"
 		}
 		
-		$command.CommandTimeOut = $Timeout
+		$command.CommandTimeOut = $CommandTimeout
 		$command.connection = $connection
 		
 		if ($Parameters.Length -gt 0) 
@@ -259,9 +266,13 @@ param(
 
 				$rows = $dataSet.Tables | Select-Object -Expand Rows 
 				
+				#PowerShell always expands arrays that are returned from functions
+				#	so we always return an array of arrays to ensure that the caller
+				#	gets back an array. If no rows are returned from the query, 
+				#	return an array that contains an empty array
 				if ($rows -eq $null) 
 				{
-					return ,@()                
+					return ,@()   
 				}
 				else 
 				{
@@ -271,24 +282,36 @@ param(
 		}
 		finally 
 		{
-			if ($ExecuteType -ne "Reader") 
+			if ($adapter -ne $null)
+			{
+				$adapter.Dispose()
+			}
+			
+			if ($command -ne $null)
+			{
+				$command.Dispose()
+			}
+			
+			if ($ExecuteType -ne "Reader")
 			{
 				if ($connection -ne $null) 
 				{
-					if ($connection.state -eq [System.Data.ConnectionState]::Open) 
-					{				
-						$connection.Close()
-					}
+					$connection.Dispose()				
 				}
 			}
 		} 
 	} #Process
-} #Invoke-DB
+} #Invoke-DBCommand
+Export-ModuleMember -Function Invoke-DBCommand
 
-function Create-InParameter {
+New-Alias dbc Invoke-DBCommand
+Export-ModuleMember -Alias dbc
+
+function New-DBInputParameter 
+{
 <#
 .Synopsis
-    Creates an input parameter that can be used with Invoke-DB
+    Creates an input parameter that can be used with Invoke-DBCommand
 .Description
     Create an input parameter object of type System.Data.DBParameter that can be used to 
 	pass parameters to a stored procedure call or a sql statement
@@ -312,18 +335,18 @@ function Create-InParameter {
 		System.Data.SqlServerCe
 		System.Data.SqlServerCe.3.5 
 .Example
-    Create-InParameter -Name "@CustomerID" -Value "ALFKI"
+    New-DBInputParameter -Name "@CustomerID" -Value "ALFKI"
 .ReturnValue
     A DbParameter object
 .Link
-    Invoke-DB
-	Create-Parameter
-	Create-OutParameter
-	Create-ReturnParameter
+    Invoke-DBCommand
+	New-DBParameter
+	New-DBOutputParameter
+	New-DBReturnParameter
 .Notes
- NAME:      Create-InParameter
+ NAME:      New-DBInputParameter
  AUTHOR:    Jorge Matos
- LASTEDIT:  05/13/2009
+ LASTEDIT:  09/14/2009
 #Requires -Version 2.0
 #>
 
@@ -348,15 +371,19 @@ param(
 
 	Process	
 	{
-		return Create-Parameter -Name $Name -DbType $DbType -Value $Value -Direction "Input" -Provider $Provider
+		return New-DBParameter -Name $Name -DbType $DbType -Value $Value -Direction "Input" -Provider $Provider
 	}#Process
-} # Create-InParameter
+} # New-DBInputParameter
+Export-ModuleMember -Function New-DBInputParameter
 
-function Create-OutParameter 
+New-Alias dbinput New-DBInputParameter
+Export-ModuleMember -Alias dbinput
+
+function New-DBOutputParameter 
 {
 <#
 .Synopsis
-    Creates an output parameter that can be used with Invoke-DB
+    Creates an output parameter that can be used with Invoke-DBCommand
 .Description
     Create an output parameter object of type System.Data.DBParameter that can be used to 
 	retrieve output parameters from a stored procedure call
@@ -387,18 +414,18 @@ function Create-OutParameter
 		System.Data.SqlServerCe
 		System.Data.SqlServerCe.3.5 
 .Example
-    Create-OutParameter -Name "@Email" -DbType "String" -Size 50
+    New-DBOutputParameter -Name "@Email" -DbType "String" -Size 50
 .ReturnValue
     A DbParameter object
 .Link
-    Invoke-DB
-	Create-Parameter
-	Create-InParameter
-	Create-ReturnParameter
+    Invoke-DBCommand
+	New-DBParameter
+	New-DBInputParameter
+	New-DBReturnParameter
 .Notes
- NAME:      Create-OutParameter
+ NAME:      New-DBOutputParameter
  AUTHOR:    Jorge Matos
- LASTEDIT:  05/13/2009
+ LASTEDIT:  09/14/2009
 #Requires -Version 2.0
 #>
 
@@ -423,14 +450,19 @@ param(
 
 	Process 
 	{
-		return Create-Parameter -Name $Name -DbType $DbType -Size $Size -Direction "Output" -Provider $Provider
+		return New-DBParameter -Name $Name -DbType $DbType -Size $Size -Direction "Output" -Provider $Provider
 	}#Process
-} # Create-OutParameter
+} # New-DBOutputParameter
+Export-ModuleMember -Function New-DBOutputParameter 
 
-function Create-ReturnParameter {
+New-Alias dboutput New-DBOutputParameter 
+Export-ModuleMember -Alias dboutput
+
+function New-DBReturnParameter 
+{
 <#
 .Synopsis
-    Creates a return parameter that can be used with Invoke-DB
+    Creates a return parameter that can be used with Invoke-DBCommand
 .Description
     Create a return parameter object of type System.Data.DBParameter that can be used to 
 	retrieve a value from a stored procedure call via a "return" statement in the stored procedure
@@ -448,18 +480,18 @@ function Create-ReturnParameter {
 		System.Data.SqlServerCe
 		System.Data.SqlServerCe.3.5 
 .Example
-    Create-ReturnParameter -Name "@My_Return_Value"
+    New-DBReturnParameter -Name "@My_Return_Value"
 .ReturnValue
     A DbParameter object
 .Link
-    Invoke-DB
-	Create-Parameter
-	Create-InParameter
-	Create-OutParameter
+    Invoke-DBCommand
+	New-DBParameter
+	New-DBInputParameter
+	New-DBOutputParameter
 .Notes
- NAME:      Create-ReturnParameter
+ NAME:      New-DBReturnParameter
  AUTHOR:    Jorge Matos
- LASTEDIT:  05/13/2009
+ LASTEDIT:  09/14/2009
 #Requires -Version 2.0
 #>
 
@@ -478,16 +510,20 @@ param(
 
 	Process 
 	{
-		return Create-Parameter -Name $Name -DbType "Int32" -Size 4 -Direction "ReturnValue" -Provider $Provider
+		return New-DBParameter -Name $Name -DbType "Int32" -Size 4 -Direction "ReturnValue" -Provider $Provider
 	}#Process
 
-} # Create-ReturnParameter
+} # New-DBReturnParameter
+Export-ModuleMember -Function New-DBReturnParameter 
 
-function Create-Parameter 
+New-Alias dbreturn New-DBReturnParameter 
+Export-ModuleMember -Alias dbreturn
+
+function New-DBParameter 
 {
 <#
 .Synopsis
-    Creates a parameter that can be used with Invoke-DB
+    Creates a parameter that can be used with Invoke-DBCommand
 .Description
     Creates an input/output/return parameter for a stored procedure
 
@@ -517,18 +553,18 @@ function Create-Parameter
 		System.Data.SqlServerCe
 		System.Data.SqlServerCe.3.5 
 .Example
-    Create-Parameter -Name "@p1" -Value 100 -DbType "Int32" -Direction "Input"
+    New-DBParameter -Name "@p1" -Value 100 -DbType "Int32" -Direction "Input"
 .ReturnValue
     DbParameter 
 .Link
-	Invoke-DB
-	Create-InParameter
-	Create-OutParameter
-	Create-ReturnParameter
+	Invoke-DBCommand
+	New-DBInputParameter
+	New-DBOutputParameter
+	New-DBReturnParameter
 .Notes
- NAME:      Create-Parameter
+ NAME:      New-DBParameter
  AUTHOR:    Jorge Matos
- LASTEDIT:  05/13/2009
+ LASTEDIT:  09/14/2009
 #Requires -Version 2.0
 #>
 
@@ -559,8 +595,8 @@ param(
 
 	Process 
 	{
-		$ProviderFactory = [System.Data.Common.DBProviderFactories]::GetFactory($Provider)
-		$p = $ProviderFactory.CreateParameter()
+		$providerFactory = [System.Data.Common.DBProviderFactories]::GetFactory($Provider)
+		$p = $providerFactory.CreateParameter()
 		$p.ParameterName = $Name
 		$p.Direction = $Direction
 		$p.DbType = $DbType
@@ -573,4 +609,8 @@ param(
 		
 		return $p
 	}#Process
-} # Create-Parameter
+} # New-DBParameter
+Export-ModuleMember -Function New-DBParameter 
+
+New-Alias dbparam New-DBParameter 
+Export-ModuleMember -Alias dbparam
